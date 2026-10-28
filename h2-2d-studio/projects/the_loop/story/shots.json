@@ -1,0 +1,335 @@
+{
+ "title": "THE LOOP",
+ "duration": 20.6,
+ "shots": [
+  {
+   "id": "b01",
+   "start": 0.0,
+   "end": 4.5,
+   "line": "3:45 AM. Just one more scroll. / stay with me...",
+   "scene": "phòng ngủ đêm, cậu ngồi mép giường ôm điện thoại, bóng đen thì thầm",
+   "in": {
+    "type": "cut"
+   },
+   "sfx": [
+    {
+     "at": 0.2,
+     "name": "clock_tick",
+     "gain": -8
+    },
+    {
+     "at": 1.8,
+     "name": "tempt_whisper",
+     "gain": -8
+    }
+   ],
+   "notes": "Creep-in zoom (1.16x): Thu hẹp góc nhìn tạo cảm giác bị cám dỗ bủa vây | Tương phản kích thước: Quỷ cám dỗ cao lớn (h=0.54) trùm lên nhân vật bé nhỏ (h=0.40)",
+   "tpl": "scene",
+   "args": {
+    "texts": [
+     {
+      "kind": "narr",
+      "t": "3:45 AM. Just one more scroll.",
+      "at": 0.35,
+      "dur": 4.0
+     },
+     {
+      "kind": "tempt",
+      "t": "stay with me...",
+      "at": 3.27,
+      "dur": 1.13
+     }
+    ],
+    "hud": {
+     "rows": [
+      {
+       "label": "DAY",
+       "n": 47
+      }
+     ]
+    },
+    "set": "bedroom",
+    "actors": [
+     {
+      "who": "hero",
+      "x": "bed.sit",
+      "pose": "sitphone",
+      "face": "neutral",
+      "hold": "phone",
+      "glowFace": "#9fb6ff",
+      "h": 0.4
+     },
+     {
+      "who": "voice",
+      "x": 0.7100000000000001,
+      "h": 0.54,
+      "pose": "stand",
+      "facing": -1,
+      "face": "grin",
+      "at": 0.3
+     }
+    ],
+    "cam": {
+     "from": [
+      0.5,
+      0.5,
+      1.0
+     ],
+     "to": [
+      0.46,
+      0.53,
+      1.16
+     ],
+     "dur": 4.5
+    },
+    "vignette": 0.62,
+    "lights": [
+     {
+      "x": 0.65,
+      "y": 0.45,
+      "r": 0.35,
+      "color": "#c4302b",
+      "a": 0.16
+     }
+    ]
+   }
+  },
+  {
+   "id": "b02",
+   "start": 4.5,
+   "end": 9.0,
+   "line": "day 150!! keep going! / look at this instead... / He couldn't stop.",
+   "scene": "cận điện thoại, tin nhắn đến, lướt nhanh",
+   "in": {
+    "type": "cut"
+   },
+   "sfx": [
+    {
+     "at": 0.4,
+     "name": "phone_vibrate",
+     "gain": -8
+    },
+    {
+     "at": 1.2,
+     "name": "notif_msg",
+     "gain": -8
+    },
+    {
+     "at": 2.6,
+     "name": "tempt_swell",
+     "gain": -8
+    }
+   ],
+   "notes": "Cận cảnh phone đẩy chậm (Push 1.06x) để tập trung cao độ",
+   "tpl": "phone",
+   "args": {
+    "texts": [
+     {
+      "kind": "tempt",
+      "t": "look at this instead...",
+      "at": 0.35,
+      "dur": 2.94
+     },
+     {
+      "kind": "narr",
+      "t": "He couldn't stop.",
+      "at": 3.29,
+      "dur": 1.06
+     }
+    ],
+    "hud": {
+     "rows": [
+      {
+       "label": "DAY",
+       "n": 47
+      }
+     ]
+    },
+    "screen": "chat",
+    "name": "jay",
+    "messages": [
+     {
+      "text": "day 150!! keep going!",
+      "me": false,
+      "at": 0.4
+     }
+    ],
+    "cam": {
+     "from": [
+      0.5,
+      0.5,
+      1.0
+     ],
+     "to": [
+      0.5,
+      0.5,
+      1.06
+     ],
+     "dur": 4.5
+    }
+   }
+  },
+  {
+   "id": "b03",
+   "start": 9.0,
+   "end": 14.0,
+   "line": "Day 47. / GONE. / you can always start tomorrow...",
+   "scene": "phòng ngủ, chuông báo thức reo, cậu gục đầu ôm gối, thất bại",
+   "in": {
+    "type": "cut"
+   },
+   "sfx": [
+    {
+     "at": 0.2,
+     "name": "alarm_beep",
+     "gain": -8
+    },
+    {
+     "at": 1.8,
+     "name": "glass_shatter",
+     "gain": -8
+    },
+    {
+     "at": 3.2,
+     "name": "breath_in",
+     "gain": -8
+    }
+   ],
+   "notes": "Creep-in zoom (1.16x): Thu hẹp góc nhìn tạo cảm giác bị cám dỗ bủa vây | Tương phản kích thước: Quỷ cám dỗ cao lớn (h=0.54) trùm lên nhân vật bé nhỏ (h=0.40)",
+   "tpl": "scene",
+   "args": {
+    "texts": [
+     {
+      "kind": "narr",
+      "t": "Day 47.",
+      "at": 0.35,
+      "dur": 4.5
+     },
+     {
+      "kind": "big",
+      "t": "GONE.",
+      "at": 2.15,
+      "dur": 2.7
+     },
+     {
+      "kind": "tempt",
+      "t": "you can always start tomorrow...",
+      "at": 3.95,
+      "dur": 0.95
+     }
+    ],
+    "hud": {
+     "rows": [
+      {
+       "label": "DAY",
+       "n": 47,
+       "reset": {
+        "at": 1.5,
+        "to": 0
+       }
+      }
+     ]
+    },
+    "set": "bedroom",
+    "setArgs": {
+     "ring": true
+    },
+    "actors": [
+     {
+      "who": "hero",
+      "x": 0.3,
+      "pose": "knees",
+      "face": "neutral",
+      "h": 0.4
+     },
+     {
+      "who": "voice",
+      "x": 0.66,
+      "h": 0.54,
+      "pose": "stand",
+      "facing": -1,
+      "face": "grin",
+      "at": 0.3
+     }
+    ],
+    "cam": {
+     "from": [
+      0.5,
+      0.5,
+      1.0
+     ],
+     "to": [
+      0.46,
+      0.53,
+      1.16
+     ],
+     "dur": 5.0
+    },
+    "vignette": 0.62,
+    "lights": [
+     {
+      "x": 0.65,
+      "y": 0.45,
+      "r": 0.35,
+      "color": "#c4302b",
+      "a": 0.16
+     }
+    ]
+   }
+  },
+  {
+   "id": "b04",
+   "start": 14.0,
+   "end": 20.6,
+   "line": "He stood up anyway.",
+   "scene": "khoảng tối, cậu đứng dậy trùm mũ, bước đi quyết tâm",
+   "in": {
+    "type": "dip",
+    "dur": 0.6
+   },
+   "sfx": [
+    {
+     "at": 0.4,
+     "name": "flash_hit",
+     "gain": -8
+    },
+    {
+     "at": 2.2,
+     "name": "footsteps",
+     "gain": -8
+    },
+    {
+     "at": 4.2,
+     "name": "whoosh_mid",
+     "gain": -8
+    }
+   ],
+   "notes": "",
+   "tpl": "card",
+   "args": {
+    "word": "DISCIPLINE.",
+    "texts": [],
+    "sub": "Start again today.",
+    "sub2": "Not tomorrow.",
+    "sub2At": 3.0
+   }
+  }
+ ],
+ "music": [
+  {
+   "start": 0.0,
+   "end": 9.0,
+   "bed": "sad"
+  },
+  {
+   "start": 9.0,
+   "end": 14.0,
+   "bed": "dark"
+  },
+  {
+   "start": 14.0,
+   "end": 20.0,
+   "bed": "rise"
+  }
+ ]
+}

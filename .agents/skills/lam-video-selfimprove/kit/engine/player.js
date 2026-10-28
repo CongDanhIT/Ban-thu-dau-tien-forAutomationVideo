@@ -1,5 +1,4 @@
-// player.js — nap du an, ve tung khung hinh: shot + chuyen canh + dai den + chinh mau + hat nhieu.
-import { E, V, clamp, lerp, ease, prog, rng, css, hex, alpha, getShot, shotIds, STYLES, text, FONTS, UI, mood, getTemplate, IMG, ASSETS } from './core.js';
+import { E, V, clamp, lerp, ease, prog, rng, css, hex, alpha, getShot, shotIds, STYLES, text, FONTS, UI, mood, getTemplate, IMG, ASSETS, ASSET_METAS } from './core.js';
 
 const q = new URLSearchParams(location.search);
 const PROJ = q.get('proj');                  // vd /proj
@@ -35,7 +34,7 @@ async function boot() {
   E.pack = null;
   if (cfg.pack) { try { E.pack = await import(`/packs/${cfg.pack}/pack.js`); if (E.pack.init) await E.pack.init(E); } catch (e) { window.__bootError = `Khong nap duoc pack ${cfg.pack}: ${e.stack || e}`; return; } }
   // anh ngoai trong <du an>/anh/
-  for (const a of await getJSON(`/__assets?proj=${encodeURIComponent(PROJ)}`, [])) ASSETS.set(a.id, a.file);
+  for (const a of await getJSON(`/__assets?proj=${encodeURIComponent(PROJ)}`, [])) { ASSETS.set(a.id, a.file); if (a.meta) ASSET_METAS.set(a.id, a.meta); }
   // nap canh
   const list = await getJSON(`/__manifest?proj=${encodeURIComponent(PROJ)}`, []);
   const errs = [];
@@ -66,7 +65,8 @@ const defOf = (s) => getShot(s.id) || (s.tpl ? getTemplate(s.tpl) : null);
 function imagesFor(i) {
   const s = E.shots[i]; if (!s) return []; const a = s.args || {}, out = [];
   const add = (x) => { if (x && typeof x === 'string') out.push(x); };
-  add(a.img); add(a.bgImg); (a.imgs || []).forEach(add); (a.layers || []).forEach((l) => add(l && l.img)); (a.items || []).forEach((l) => add(l && l.img));
+  add(a.img); add(a.bgImg); add(a.bg); (a.imgs || []).forEach(add); (a.layers || []).forEach((l) => add(l && l.img)); (a.items || []).forEach((l) => add(l && l.img));
+  if (a.set && ASSETS.has(a.set)) add(a.set);
   const d = getShot(s.id); if (d && d.images) d.images.forEach(add);
   return out;
 }

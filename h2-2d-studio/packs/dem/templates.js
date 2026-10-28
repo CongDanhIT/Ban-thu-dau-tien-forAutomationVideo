@@ -1,7 +1,7 @@
 // templates.js — mau canh cho phim khong loi doc. shots.json: { "tpl": "<ten>", "args": {...} }. Thoi gian "at" = giay tinh tu dau canh.
 // Mau: scene (boi canh + nhan vat + giong noi) | phone | clock | calendar | face | note | card | black | cta
 // Lop phu chung cho moi mau: texts, hud, fx, lights, cam (xem README trong references/mau-canh.md)
-import { E, clamp, lerp, ease, kf, rng, noise, alpha, shade, registerTemplate, text, measure, radGrad } from '/engine/core.js';
+import { E, clamp, lerp, ease, kf, rng, noise, alpha, shade, registerTemplate, text, measure, radGrad, img, hasAsset, getAssetMeta } from '/engine/core.js';
 import { PAL, accent, fx, fy, fs, at, window01, safe, narr, tempt, say, big, stroke, light, beam, vignette, ln, box, oval, FONT_NARR, FONT_HAND, FONT_UI, fillAll, wrap } from './ink.js';
 import { bean, lyingHead, head, bigHand, CAST } from './bean.js';
 import { set, rain, dust, calendar, digitClock } from './sets.js';
@@ -130,25 +130,91 @@ function blurBg(g, kind, setArgs = {}, dim = 0.4) {
   }
   g.save(); g.imageSmoothingEnabled = true; g.drawImage(c, -20, -12, E.W + 40, E.H + 24); g.restore();
 }
+
+function cover(g, im, x, y, w, h, o = {}) {
+  const z = o.z ?? 1, s = Math.max(w / im.width, h / im.height) * z, iw = im.width * s, ih = im.height * s;
+  g.drawImage(im, x + (w - iw) * (o.fx ?? 0.5), y + (h - ih) * (o.fy ?? 0.5), iw, ih);
+}
+
+// ---------- ve moi truong Background AI va khoi tao Smart Anchors
+export function drawAiBg(g, bgId, opts = {}, lt = 0) {
+  const im = img(bgId);
+  const meta = getAssetMeta(bgId) || opts.meta || {};
+  const gyNorm = meta.ground_y ?? opts.ground_y ?? (E.vertical ? 0.72 : 0.8);
+  const gy = fy(gyNorm);
+  const M = { gy, isAiBg: true, meta };
+
+  if (im) {
+    const driftX = opts.drift ? Math.sin(lt * 0.25) * 12 : 0;
+    const driftY = opts.drift ? Math.cos(lt * 0.2) * 6 : 0;
+    cover(g, im, driftX, driftY, E.W, E.H, {
+      z: opts.crop ?? 1.02,
+      fx: opts.focus?.[0] ?? meta.focus?.[0] ?? 0.5,
+      fy: opts.focus?.[1] ?? meta.focus?.[1] ?? 0.5
+    });
+    const dim = opts.dim ?? meta.dim ?? 0.25;
+    if (dim > 0) {
+      g.save();
+      g.fillStyle = `rgba(11, 11, 13, ${dim})`;
+      g.fillRect(0, 0, E.W, E.H);
+      g.restore();
+    }
+    if (meta.light_source) {
+      const ls = meta.light_source;
+      light(g, fx(ls.x ?? 0.5), fy(ls.y ?? 0.3), fs(ls.r, 0.4), ls.color || PAL.lamp, ls.a ?? 0.25);
+    }
+  } else {
+    set(g, 'void', { t: lt, gy: gyNorm });
+  }
+
+  const anchors = meta.anchors || opts.anchors || {};
+  for (const [key, pos] of Object.entries(anchors)) {
+    if (!Array.isArray(pos)) continue;
+    const kx = fx(pos[0]), ky = fy(pos[1]);
+    if (key.includes('.')) {
+      const [k, sub] = key.split('.');
+      if (!M[k]) M[k] = {};
+      M[k][sub] = [kx, ky];
+    } else {
+      M[key] = [kx, ky];
+    }
+  }
+
+  if (!M.bed) M.bed = { sit: [fx(0.3), gy], head: [fx(0.18), gy - 40], lie: [fx(0.25), gy] };
+  if (!M.desk) M.desk = { seat: [fx(0.78), gy], top: [fx(0.78), gy - 120] };
+  if (!M.door) M.door = [fx(0.88), gy];
+  if (!M.chair) M.chair = [fx(0.5), gy];
+  if (!M.floor) M.floor = [fx(0.5), gy];
+
+  return M;
+}
+
 const tpl = (name, draw) => registerTemplate(name, { draw: (g, lt, info) => draw(g, lt, info, info.args || {}) });
 
 // ---------- scene: boi canh + nguoi + giong noi.  args: set, setArgs {...}, bed {who, face, faceAt, arm, at}, actors [...], lights, fx, cam, texts, hud
 tpl('scene', (g, lt, info, a) => {
   const ctx = { heads: {} };
   camera(g, lt, info, () => {
-    const so = { ...(a.setArgs || {}), t: lt, occupied: !!a.bed };
-    const M = set(g, a.set || 'bedroom', so);
+    let M = null;
+    const bgImgId = a.bgImg || a.bg || (a.set === 'ai_bg' ? a.img : (hasAsset(a.set) ? a.set : null));
+    if (bgImgId) {
+      M = drawAiBg(g, bgImgId, a.setArgs || {}, lt);
+    } else {
+      const so = { ...(a.setArgs || {}), t: lt, occupied: !!a.bed };
+      M = set(g, a.set || 'bedroom', so);
+    }
     drawLights(g, a.lights);
     const actors = (a.actors || []).slice().sort((p, q) => (p.z || 0) - (q.z || 0));
     const behind = actors.filter((x) => x.behind), front = actors.filter((x) => !x.behind);
     for (const ac of behind) { const r = drawActor(g, ac, lt, M, info); if (r) { if (ac.who === 'voice') ctx.voice = r; else { ctx.heads[ac.who] = r; ctx.heads.first = ctx.heads.first || r; } } }
     if (a.bed && M.bed) {
-      M.pillow(); const b = a.bed, R = fs(b.r, 0.05);
+      if (M.pillow) M.pillow();
+      const b = a.bed, R = fs(b.r, 0.05);
       const hx = M.bed.head[0] + (b.dx || 0), hy = M.bed.head[1] + (b.dy || 0) + Math.sin(lt * 1.6) * 1.5;
       const face = at(lt, b.faceAt, b.face || 'sleep');
       lyingHead(g, hx, hy, R, { who: b.who || 'hero', face, look: at(lt, b.lookAt, b.look ?? -0.4), t: lt, rot: b.rot ?? -0.25, facing: b.facing ?? -1 });
-      M.blanket(true);
-      if (b.arm) { const k = typeof b.arm === 'object' ? ease.inOut(clamp((lt - (b.arm.at ?? 0)) / (b.arm.dur ?? 0.8))) : 1, ex = lerp(hx + R * 1.2, M.clock[0] + 30, k), ey = lerp(hy + R * 1.6, M.clock[1] + 30, k); g.save(); g.lineCap = 'round'; g.strokeStyle = PAL.heroLine; g.lineWidth = R * 0.42; g.beginPath(); g.moveTo(hx + R * 1.4, hy + R * 1.3); g.quadraticCurveTo((hx + ex) / 2, ey - R * 0.5, ex, ey); g.stroke(); g.strokeStyle = PAL.hero; g.lineWidth = R * 0.32; g.stroke(); g.fillStyle = PAL.hero; g.beginPath(); g.arc(ex, ey, R * 0.26, 0, 7); g.fill(); g.restore(); }
+      if (M.blanket) M.blanket(true);
+      if (b.arm && M.clock) { const k = typeof b.arm === 'object' ? ease.inOut(clamp((lt - (b.arm.at ?? 0)) / (b.arm.dur ?? 0.8))) : 1, ex = lerp(hx + R * 1.2, M.clock[0] + 30, k), ey = lerp(hy + R * 1.6, M.clock[1] + 30, k); g.save(); g.lineCap = 'round'; g.strokeStyle = PAL.heroLine; g.lineWidth = R * 0.42; g.beginPath(); g.moveTo(hx + R * 1.4, hy + R * 1.3); g.quadraticCurveTo((hx + ex) / 2, ey - R * 0.5, ex, ey); g.stroke(); g.strokeStyle = PAL.hero; g.lineWidth = R * 0.32; g.stroke(); g.fillStyle = PAL.hero; g.beginPath(); g.arc(ex, ey, R * 0.26, 0, 7); g.fill(); g.restore(); }
       ctx.heads.hero = ctx.heads.hero || { head: [hx, hy], R }; ctx.heads.first = ctx.heads.first || ctx.heads.hero;
       if (b.zzz) drawFx(g, lt, info, [{ kind: 'zzz', x: hx + R, y: hy - R * 1.2 }]);
     }

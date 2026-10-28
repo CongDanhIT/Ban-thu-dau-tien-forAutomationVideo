@@ -1,5 +1,10 @@
 # HƯỚNG DẪN QUY TRÌNH SẢN XUẤT HOẠT HÌNH 2D (H2 STUDIO)
 
+> [!IMPORTANT]
+> **QUY CHUẨN VẬN HÀNH DUY NHẤT (SINGLE SOURCE OF TRUTH):**  
+> Vui lòng tham chiếu [MASTER_SOP.md](file:///d:/project%20workspace/ContentYTBapp/MASTER_SOP.md) để biết quy trình chuẩn mực 5 giai đoạn cho mọi thể loại/pack (`dem`, `doodle`, `reconstruct`) và sử dụng bộ điều phối tự động:  
+> `py -X utf8 tools/produce.py --project projects/<slug> [--pack dem|doodle|reconstruct]`
+
 Tài liệu này ghi lại toàn bộ quy trình sản xuất phim hoạt hình ngắn không lời đọc (thể loại *"An Animated Short Film"* về kỷ luật, cai nghiện điện thoại, vượt qua cám dỗ) sử dụng **H2 2D Studio Engine** được vẽ và diễn hoạt 100% bằng code.
 
 ---
@@ -28,43 +33,32 @@ Nhân vật của kênh được tích hợp trực tiếp vào file `h2-2d-stud
 
 ---
 
-## 3. Quy trình sản xuất một tập phim mới
+## 3. Quy chuẩn Đặt tên Asset (100% Tiếng Anh)
 
-### Bước 1: Viết kịch bản
-Chỉ cần đưa ra đề tài (ví dụ: *"Cai nghiện điện thoại"*, *"Kỷ luật thức dậy lúc 5 giờ sáng"*, *"Chiến thắng con quỷ lười biếng"*).  
-Hệ thống sẽ tạo ra:
-- File kịch bản phân cảnh chi tiết (thời lượng, bối cảnh, tư thế nhân vật, câu thoại chữ cám dỗ, nhạc nền, SFX).
-- Bộ đếm ngày `DAY N`.
-- Bộ 10 tiêu đề giật tít + 3 ý tưởng thumbnail.
-
-### Bước 2: Tạo dự án & Khởi tạo cảnh
-Tạo dự án mới trong studio:
-```bash
-py tools/new_project.py --name <ten_du_an> --title "<Tên Phim>" --pack dem --style flat --lang en
-```
-Kịch bản được ghi vào: `projects/<ten_du_an>/story/shots.json`.
-
-### Bước 3: Xem trước phân cảnh (Storyboard Sheet)
-Chạy lệnh xuất bảng ảnh storyboard để kiểm tra bố cục trước khi render video:
-```bash
-node render.mjs --project projects/<ten_du_an> --sheet --scale 0.5 --at 0.5
-```
-Ảnh tổng hợp lưu tại: `projects/<ten_du_an>/build/sheets/sheet_01.jpg`.
-
-### Bước 4: Xuất video hoàn chỉnh có âm thanh
-1. **Kết xuất hình ảnh (Video silent):**
-   ```bash
-   node render.mjs --project projects/<ten_du_an>
-   ```
-2. **Lồng ghép âm thanh chuẩn -14 LUFS:**
-   ```bash
-   py tools/mix.py --project projects/<ten_du_an>
-   ```
-Video xuất xưởng tại: `projects/<ten_du_an>/out/<Tên Phim>.mp4`.
+Nhằm đảm bảo tính đồng bộ hệ thống, hạn chế tối đa sai sót khi render và tối ưu khả năng tái sử dụng:
+1. **Tên Định danh (Canonical Name):** BẮT BUỘC **100% TIẾNG ANH** (dùng chữ thường, `snake_case` hoặc `camelCase`).
+   - *Quy ước:* `alarm_beep` (không đặt `tieng_bao_thuc`), `steering_wheel` (không đặt `vo_lang`), `deskLamp` (không đặt `den_ban`).
+   - Toàn bộ tên file vector trong `packs/dem/props.js`, file âm thanh `audio/sfx/<name>.wav`, file ảnh `anh/<name>.png` và dữ liệu trường trong `shots.json` đều lưu bằng tên Tiếng Anh này.
+2. **Từ điển Tìm kiếm (Aliases):** Lưu trữ các từ khóa tiếng Việt (có dấu, không dấu) và từ đồng nghĩa:
+   - Khi viết kịch bản, AI và người dùng có thể gõ tự nhiên bằng tiếng Việt (ví dụ: `"chuông báo thức"`, `"vô lăng"`, `"thức đêm"`).
+   - Hệ thống `asset_registry.py` sẽ tự động đối chiếu ngữ nghĩa (Fuzzy Matching) để chuyển đổi về mã Tiếng Anh chuẩn xác.
 
 ---
 
-## 4. Các bối cảnh có sẵn trong Studio
+## 4. Quy trình sản xuất một tập phim mới (Chuẩn MASTER_SOP)
+
+Theo [MASTER_SOP.md](file:///d:/project%20workspace/ContentYTBapp/MASTER_SOP.md), toàn bộ quy trình từ kịch bản đến video thành phẩm được thực hiện tự động qua Master CLI:
+
+```bash
+# Lệnh trọn gói duy nhất (Tự động biên dịch kịch bản, render, mix -14 LUFS và QC):
+py -X utf8 tools/produce.py --project projects/<ten_du_an> --pack dem --phim input/01-PHIM-<ten_du_an>.txt
+```
+
+*(Nếu cần gỡ lỗi hoặc thao tác thủ công từng công đoạn: xem chi tiết tại [MASTER_SOP.md](file:///d:/project%20workspace/ContentYTBapp/MASTER_SOP.md) với cờ `--stage storyboard`, `--stage render`, `--stage mix`, `--stage qc`).*
+
+---
+
+## 5. Các bối cảnh có sẵn trong Studio
 
 | Mã bối cảnh (`set`) | Mô tả | Tham số tùy biến chính |
 | :--- | :--- | :--- |
@@ -79,7 +73,32 @@ Video xuất xưởng tại: `projects/<ten_du_an>/out/<Tên Phim>.mp4`.
 
 ---
 
-## 5. Danh sách thư viện âm thanh (SFX & Music)
+## 6. Danh sách thư viện âm thanh (SFX & Music)
 
 - **Nhạc nền:** `sad` (piano u sầu), `dark` (drone nhịp tim rùng rợn), `rise` (trống dồn và piano vươn lên), `resolve` (hợp âm ấm áp kết phim), `hope` (bình minh hy vọng).
 - **Hiệu ứng SFX:** `clock_tick` (đồng hồ tích tắc), `alarm_beep` (chuông báo thức), `tempt_whisper` (tiếng quỷ thì thầm), `tempt_swell` (âm u đe dọa), `flash_hit` (chớp sáng giác ngộ), `glass_shatter` (kính vỡ khi quỷ tan biến), `footsteps` (tiếng bước chân), `whoosh_fast` (tiếng gió lướt), `heartbeat` (tiếng tim đập dồn dập)...
+
+---
+
+## 7. Bộ công cụ Đạo diễn & Quản lý Tài nguyên Nâng cao
+
+Nhằm tối ưu hóa chất lượng điện ảnh và năng lực mở rộng của Studio:
+
+### 6.1. Quản lý Vòng đời Tài nguyên (`tools/asset_registry.py`)
+- **Tra cứu:** `py tools/asset_registry.py --list all`
+- **Thêm mới (Bắt buộc tiếng Anh):** `py tools/asset_registry.py --add props --name steering_wheel --aliases "vô lăng, tay lái"`
+- **Xóa an toàn (Có kiểm tra tác động):** `py tools/asset_registry.py --remove props --name <ten_asset>`
+- **Kiểm tra xem asset đang được video nào dùng:** `py tools/asset_registry.py --check <ten_asset>`
+
+### 6.2. Môi trường AI với Điểm neo Thông minh (`tools/anchor_tool.py`)
+- **Khởi tạo mốc tọa độ:** `py tools/anchor_tool.py --init <file_anh> --preset bedroom`
+- **Xem tọa độ hiện tại:** `py tools/anchor_tool.py --image <file_anh> --view`
+- **Chỉnh sửa điểm neo:** `py tools/anchor_tool.py --image <file_anh> --key bed.sit --x 0.35 --y 0.76`
+- **Xem quy chuẩn Prompt ảnh nền AI Minimalist:** `py tools/anchor_tool.py --rules`
+
+### 6.3. Đạo diễn Phân cảnh Tự động (`tools/phim.py`)
+- Tự động gán góc máy điện ảnh (`cam`: Creep-in khi cám dỗ, Pull-out khi bừng tỉnh, Breathing push chống tĩnh hình).
+- Tự động rung máy (`shake`) khi có chấn động tâm lý (tiếng chuông reo, chuỗi ngày sụp đổ).
+- Tự động áp dụng bố cục 1/3 (dạt nhân vật sang trái, chừa khoảng tối mênh mông biểu thị sự cô độc).
+- Tương phản kích thước: Quỷ cám dỗ (`voice`) cao lớn trùm lên nhân vật bé nhỏ co ro.
+- Ghi chú ý đồ nghệ thuật (`notes`) chi tiết vào từng phân cảnh trong `shots.json`.

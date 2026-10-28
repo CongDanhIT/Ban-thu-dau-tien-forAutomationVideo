@@ -10,6 +10,9 @@ Học từ các kênh "An Animated Short Film" dẫn đầu ngách. Chỉ học 
 ## Màu và nét
 - Nền rất tối (#141418 → #1d1e24). Đồ vật tô phẳng xám xanh tối, **nét viền mảnh màu sáng** (#c9ccd4). Không viền đen dày.
 - Nhân vật màu kem #ece6d6, nét xám mảnh, bóng mềm nửa sau.
+- **Quy tắc tương phản cao (High Contrast):**
+  * Nhân vật luôn có màu sáng hơn phông nền ít nhất 40%. Nếu nhân vật có đầu đen / người que mực tối (`#0c0a10`), **bắt buộc có viền sáng Rim Light (`rim: { color, w: 4.5..6.0 }`)** hoặc quầng sáng sau lưng để không bị chìm vào màn đêm.
+  * Chi tiết mặt (mắt, miệng): luôn dùng màu tương phản cao (`#ffffff`, `#fff1dc`, vàng neon), không bao giờ để rỗng hoặc lem màu quần áo.
 - Ánh sáng là các vầng tròn mềm: đèn bàn vàng, màn hình xanh, trăng, cửa neon. Mỗi cảnh **1 nguồn sáng chính**.
 - **Màu nhấn chỉ dùng cho:** bóng đen cám dỗ, chữ cám dỗ, số bộ đếm sau khi sụp, gạch chân thẻ kết, dòng phụ 2 thẻ kết, băng đô khi tập. Không tô màu nhấn lên vật khác.
 

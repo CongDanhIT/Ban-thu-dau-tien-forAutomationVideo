@@ -1,0 +1,43 @@
+{
+  "pack": "reconstruct",
+  "name": "3D White Clay & Forensic Investigation",
+  "description": "Phong cách 3D đất sét trắng Three.js và tài liệu điều tra hiện trường, buồng lái, máy bay, mannequin 23 tư thế và thẻ báo chí.",
+  "sets": [
+    "cockpit",
+    "cabin",
+    "airliner_exterior",
+    "crash_site",
+    "investigation_room",
+    "radar_map"
+  ],
+  "props": [
+    "flight_recorder",
+    "control_yoke",
+    "pilot_seat",
+    "oxygen_mask",
+    "newspaper_clipping",
+    "document_binder"
+  ],
+  "poses": [
+    "pilot",
+    "ride",
+    "defend",
+    "phone",
+    "struggle",
+    "hands_head",
+    "reach",
+    "stand",
+    "sit",
+    "crouch",
+    "kneel",
+    "fall_forward"
+  ],
+  "templates": [
+    "cockpit",
+    "cabin",
+    "airliner",
+    "evidence_article",
+    "evidence_quote",
+    "evidence_stat"
+  ]
+}

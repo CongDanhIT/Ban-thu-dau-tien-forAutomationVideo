@@ -33,7 +33,20 @@ function listScenes(dir) {
 }
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
-  if (u.pathname === '/__assets') { const d = path.join(PROJ, 'anh'); const list = fs.existsSync(d) ? fs.readdirSync(d).filter((f) => /\.(png|jpe?g|webp)$/i.test(f)).sort().map((f) => ({ id: path.parse(f).name, file: 'anh/' + f })) : []; res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(list)); }
+  if (u.pathname === '/__assets') {
+    const d = path.join(PROJ, 'anh');
+    const list = fs.existsSync(d) ? fs.readdirSync(d).filter((f) => /\.(png|jpe?g|webp)$/i.test(f)).sort().map((f) => {
+      const id = path.parse(f).name;
+      const metaPath = path.join(d, id + '.meta.json');
+      let meta = null;
+      if (fs.existsSync(metaPath)) {
+        try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')); } catch {}
+      }
+      return { id, file: 'anh/' + f, meta };
+    }) : [];
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify(list));
+  }
   if (u.pathname === '/__manifest') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(listScenes(PROJ))); }
   let file = u.pathname.startsWith('/proj/') ? path.join(PROJ, decodeURIComponent(u.pathname.slice(6))) : path.join(ROOT, decodeURIComponent(u.pathname));
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('not found'); }

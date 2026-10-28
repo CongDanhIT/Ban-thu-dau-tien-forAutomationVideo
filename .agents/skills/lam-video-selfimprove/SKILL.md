@@ -5,12 +5,18 @@ description: Dựng phim hoạt hình ngắn KHÔNG LỜI ĐỌC kiểu kênh se
 
 # Dựng phim ngắn không lời (H2 Studio, gói ngách Self-Improvement)
 
+> [!IMPORTANT]
+> **QUY CHUẨN ĐỒNG BỘ TOÀN HỆ THỐNG:**  
+> Hệ thống hiện tuân thủ quy trình chuẩn hóa tại [MASTER_SOP.md](file:///d:/project%20workspace/ContentYTBapp/MASTER_SOP.md).  
+> Toàn bộ pipeline tự động hóa (Kịch bản -> Asset Audit -> Render -> Mix -14 LUFS -> QC Gate) được vận hành bằng Master CLI:  
+> `py -X utf8 tools/produce.py --project projects/<slug> [--pack dem|doodle|reconstruct] [--phim <file>]`
+
 Nói chuyện với người dùng bằng **tiếng Việt**, ngắn gọn, không dùng thuật ngữ lập trình.
 
 Toàn bộ hình **vẽ bằng code** (canvas, Chromium chạy ngầm chụp từng khung, ffmpeg ghép video). Không cần voice, không cần ảnh AI trong video. Chỉ thumbnail dùng 1 ảnh AI (`T01`) do người dùng tạo theo `03-THUMB-PROMPT`.
 
 **Tài nguyên trong skill này:**
-- `kit/`: bộ dựng dùng chung với các gói H2. Gồm `render.mjs`, `engine/`, `packs/dem/` (bộ phong cách của ngách này), `tools/` (có `phim.py`), `audio/`, `projects/selfimprove-mau/` (dự án mẫu đủ mọi mẫu cảnh).
+- `kit/`: bộ dựng dùng chung với các gói H2. Gồm `render.mjs`, `engine/`, `packs/dem/` (bộ phong cách của ngách này), `tools/` (có `produce.py`, `phim.py`, `qc_video.py`), `audio/`, `projects/selfimprove-mau/` (dự án mẫu đủ mọi mẫu cảnh).
 - `references/cai-dat.md`: cài đặt lần đầu.
 - `references/phong-cach.md`: luật hình của ngách. **Đọc trước khi lên cảnh.**
 - `references/mau-canh.md`: toàn bộ mẫu cảnh, nhân vật, tư thế, boi cảnh và tham số.

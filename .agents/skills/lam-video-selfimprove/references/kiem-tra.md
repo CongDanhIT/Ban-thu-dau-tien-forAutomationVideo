@@ -11,9 +11,13 @@
 - **Trộn âm:** `python tools/mix.py --project projects/<slug>` → `out/<tiêu đề>.mp4`.
 - **Tốc độ tham khảo:** bộ `dem` vẽ bằng CPU (render.mjs tự chọn khi dự án có `pack`): khoảng 20 khung/giây ở 1080p trên máy cloud 2 nhân → phim 3 phút mất 3–5 phút. 720p nhanh gấp đôi. Máy nhiều nhân: thêm `--workers 4`.
 
-## Danh sách kiểm tra (mỗi ảnh tổng hợp)
+## Danh sách kiểm tra (mỗi ảnh tổng hợp & stills)
 - [ ] Không có khung "THIEU MAU", "THIEU SHOT" hay chữ đỏ "LOI".
 - [ ] Hình khớp mô tả cảnh trong file 01. Chữ đúng nguyên văn file 01.
+- [ ] **Tương phản & Tách hình nhân vật:** Không bị mất đầu/thân trên nền tối. Nhân vật đầu tối phải có viền sáng Rim Light (`w: 4.5..6`) hoặc quầng sáng sau lưng.
+- [ ] **Khuôn mặt & Biểu cảm:** Mắt và miệng màu sáng rõ ràng (`#ffffff` / kem), không bị lem màu áo hay chìm vào bóng tối.
+- [ ] **Độ rõ của chữ (Legibility):** Tiêu đề màu trắng sáng hoặc vàng neon glow rực rỡ. Chữ trong bong bóng thoại to rõ (>= 40px), bong bóng cách đỉnh đầu tối thiểu 120px, không đè đầu nhân vật.
+- [ ] **Cân đối bố cục (Layout Balance):** Các khối hộp thông tin đa cột dàn đều, hiện đồng bộ trong 0.6s đầu, không để trống lệch một bên khung hình.
 - [ ] Chữ kể chuyện không đè lên mặt nhân vật, đọc rõ trên nền (không nằm trên vùng sáng chói).
 - [ ] Chữ cám dỗ nằm cạnh bóng đen, không đè lên nhân vật chính.
 - [ ] Bộ đếm đúng số theo từng cảnh, cú sụp đúng cảnh, sau cú sụp các cảnh sau giữ số mới.

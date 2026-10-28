@@ -9,15 +9,51 @@ export const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 export const lerp = (a, b, k) => a + (b - a) * k;
 export const prog = (t, a, b) => clamp((t - a) / (b - a));      // 0..1 giua a va b
 export const ease = {
-  linear: (k) => k,
-  in: (k) => k * k,
-  out: (k) => 1 - (1 - k) * (1 - k),
-  inOut: (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2),
-  sine: (k) => 0.5 - 0.5 * Math.cos(Math.PI * k),
-  outBack: (k) => { const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); },
+  linear: (k) => clamp(k),
+  in: (k) => clamp(k) * clamp(k),
+  out: (k) => 1 - (1 - clamp(k)) * (1 - clamp(k)),
+  inOut: (k) => ((k = clamp(k)) < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2),
+  sine: (k) => 0.5 - 0.5 * Math.cos(Math.PI * clamp(k)),
+  inQuad: (k) => clamp(k) ** 2,
+  outQuad: (k) => 1 - (1 - clamp(k)) ** 2,
+  outBack: (k) => { k = clamp(k); const c = 1.70158; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); },
+  outExpo: (k) => (clamp(k) === 1 ? 1 : 1 - 2 ** (-10 * clamp(k))),
   outElastic: (k) => (k <= 0 ? 0 : k >= 1 ? 1 : Math.pow(2, -10 * k) * Math.sin((k * 10 - 0.75) * (2 * Math.PI) / 3) + 1),
 };
-// keyframes: kf(t, [[t0,v0],[t1,v1],...], easeFn)  (v co the la so hoac mang so)
+
+// mixVal: noi suy da tang giua 2 gia tri (so, mang, hoac object)
+export function mixVal(a, b, k) {
+  if (typeof a === 'number') return lerp(a, b, k);
+  if (Array.isArray(a)) return a.map((v, i) => mixVal(v, b[i] ?? v, k));
+  if (a && typeof a === 'object') {
+    const o = {};
+    for (const kk in a) {
+      o[kk] = (typeof a[kk] === 'number' || Array.isArray(a[kk]) || (a[kk] && typeof a[kk] === 'object'))
+        ? mixVal(a[kk], b?.[kk] ?? a[kk], k)
+        : (k < 0.5 ? a[kk] : b?.[kk] ?? a[kk]);
+    }
+    return o;
+  }
+  return k < 0.5 ? a : b;
+}
+
+// key: noi suy keyframe da tang cap cao (ho tro ease rieng tung doan, noi suy so, mang, object)
+// Vi du: key(t, [[0, {x:0, y:0}], [1.5, {x:100, y:200}, ease.outBack], [3.0, {x:50, y:50}]])
+export function key(t, frames, fn = ease.inOut) {
+  if (!frames || !frames.length) return 0;
+  if (t <= frames[0][0]) return frames[0][1];
+  for (let i = 1; i < frames.length; i++) {
+    const [t1, v1, f] = frames[i];
+    if (t <= t1) {
+      const [t0, v0] = frames[i - 1];
+      const easeFn = f || fn;
+      return mixVal(v0, v1, easeFn((t - t0) / (t1 - t0 || 1)));
+    }
+  }
+  return frames[frames.length - 1][1];
+}
+
+// keyframes cu: kf(t, [[t0,v0],[t1,v1],...], easeFn) (giu nguyen de tuong thich 100% code cu)
 export function kf(t, keys, fn = ease.inOut) {
   if (t <= keys[0][0]) return keys[0][1];
   for (let i = 1; i < keys.length; i++) {
@@ -28,6 +64,7 @@ export function kf(t, keys, fn = ease.inOut) {
   }
   return keys[keys.length - 1][1];
 }
+
 // so ngau nhien co dinh theo seed (khong dung Math.random de moi lan render giong nhau)
 export function rng(seed = 1) {
   let s = (Math.floor(seed * 9301 + 49297) % 233280 + 233280) % 233280 || 1;
@@ -39,6 +76,13 @@ export function noise(x, seed = 0) {
   return lerp(h(i), h(i + 1), u) * 2 - 1;
 }
 export const shake = (t, amp = 10, freq = 18, seed = 3) => [noise(t * freq, seed) * amp, noise(t * freq, seed + 7) * amp];
+
+// drift: chuyen dong troi muot ma 3 chieu theo tieng noi / am nhac (smooth handheld camera drift)
+export const drift = (t, amp = 1, freq = 0.35, seed = 3) => [
+  noise(t * freq, seed) * amp,
+  noise(t * freq, seed + 9) * amp,
+  noise(t * freq, seed + 21) * amp
+];
 
 // ---------- mau
 export function hex(c) {
@@ -71,13 +115,19 @@ export const STYLES = {
   storybook: { name: 'Truyen tranh diu', tint: null, grade: { lift: [40, 34, 46], gain: [255, 246, 236], contrast: 0.9, sat: 0.85, vignette: 0.3, grain: 0.04 } },
   flat:      { name: 'Phang, khong chinh mau (minh hoa doodle)', tint: null, grade: null },
 };
-export const UI = { gold: '#ffc83d', accent: '#ff6b5a', cream: '#fff1dc', blue: '#8fd0ff', bp: '#0e1d3e', ink: '#0c0a10', inkFar: '#2a2232' };
+export const UI = {
+  gold: '#ffc83d', accent: '#ff6b5a', cream: '#fff1dc', blue: '#8fd0ff', bp: '#0e1d3e', ink: '#0c0a10', inkFar: '#2a2232',
+  card: 'rgba(18,28,48,.94)', cardLine: 'rgba(150,180,230,.25)', text: '#9fb6d8', sub: '#6f84a6', blueprint: '#8fb8e8', bpBg: '#0b1324', good: '#5fd39a'
+};
 export function mood(name = 'dusk') {
   const st = STYLES[E.cfg.style] || STYLES.dusk;
   const n = (st.tint && st.tint[name]) || name;
   return { name: n, ...(MOODS[n] || MOODS.dusk) };
 }
-export const S = () => ({ ...UI, style: STYLES[E.cfg.style] || STYLES.dusk });
+export const S = () => {
+  const st = STYLES[E.cfg.style] || STYLES.dusk;
+  return { ...UI, ui: { ...UI, ...(st.ui || {}) }, ink: st.ink || UI.ink, inkFar: st.inkFar || UI.inkFar, style: st };
+};
 
 // ---------- ve co ban
 export function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
@@ -88,8 +138,16 @@ export function seg(g, pts, w, stroke, cap = 'round') {
   g.lineWidth = w; g.lineCap = cap; g.lineJoin = 'round'; g.strokeStyle = stroke; g.stroke();
 }
 export function poly(g, pts, fill) { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); g.fillStyle = fill; g.fill(); }
-export function linGrad(g, x0, y0, x1, y1, stops) { const gr = g.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; }
-export function radGrad(g, x, y, r0, r1, stops) { const gr = g.createRadialGradient(x, y, r0, x, y, r1); stops.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; }
+export function linGrad(g, x0, y0, x1, y1, stops) {
+  const gr = g.createLinearGradient(x0, y0, x1, y1);
+  stops.forEach((c, i) => Array.isArray(c) ? gr.addColorStop(c[0], c[1]) : gr.addColorStop(i / Math.max(1, stops.length - 1), c));
+  return gr;
+}
+export function radGrad(g, x, y, r0, r1, stops) {
+  const gr = g.createRadialGradient(x, y, r0, x, y, r1);
+  stops.forEach((c, i) => Array.isArray(c) ? gr.addColorStop(c[0], c[1]) : gr.addColorStop(i / Math.max(1, stops.length - 1), c));
+  return gr;
+}
 export function glow(g, x, y, r, color, a = 0.6) {
   if (!(r > 0.5) || !(a > 0)) return;
   g.save(); g.globalCompositeOperation = 'lighter';
@@ -98,9 +156,15 @@ export function glow(g, x, y, r, color, a = 0.6) {
 }
 export function fill(g, color) { g.fillStyle = color; g.fillRect(-E.W, -E.H, E.W * 3, E.H * 3); }
 export function veil(g, color = '#000', a = 0.4) { g.save(); g.setTransform(E.PX, 0, 0, E.PX, 0, 0); g.fillStyle = alpha(color, a); g.fillRect(0, 0, E.W, E.H); g.restore(); }
+export function backdrop(g, colors, area = [-E.W, -E.H, E.W * 3, E.H * 3]) {
+  if (!colors) return;
+  if (Array.isArray(colors)) g.fillStyle = linGrad(g, 0, 0, 0, E.H, colors);
+  else g.fillStyle = colors;
+  g.fillRect(...area);
+}
 
 // ---------- chu
-export const FONTS = { title: '"Baloo 2"', body: '"Be Vietnam Pro"', serif: '"Lora"', mono: 'ui-monospace, monospace' };
+export const FONTS = { title: '"Baloo 2"', body: '"Be Vietnam Pro"', serif: '"Lora"', ui: '"Nunito", "Be Vietnam Pro", sans-serif', mono: 'ui-monospace, monospace' };
 export function text(g, str, x, y, o = {}) {
   const { size = 48, font = FONTS.title, weight = 800, color = UI.cream, align = 'center', base = 'middle', spacing = 0, glowColor = null, a = 1, stroke = 0, strokeColor = '#000', italic = false } = o;
   g.save(); g.globalAlpha *= a;
@@ -148,20 +212,68 @@ export function phraseTime(phrase, after = 0) {
   const toks = String(phrase).split(/\s+/).map(nz).filter(Boolean); if (!toks.length) return null;
   const W = E.words;
   for (let i = 0; i < W.length; i++) {
-    if (W[i].t < after - 0.01) continue;
-    let ok = true; for (let k = 0; k < toks.length; k++) if (!W[i + k] || nz(W[i + k].w) !== toks[k]) { ok = false; break; }
-    if (ok) return W[i].t;
+    if ((W[i].t ?? W[i].start ?? 0) < after - 0.01) continue;
+    let ok = true;
+    for (let k = 0; k < toks.length; k++) {
+      const item = W[i + k];
+      if (!item || nz(item.w ?? item.word ?? '') !== toks[k]) { ok = false; break; }
+    }
+    if (ok) return W[i].t ?? W[i].start ?? 0;
   }
   return null;
 }
+
 // do mo mieng 0..1 trong khoang [from,to] (giay toan video), nhay theo tung chu
 export function talkAmount(gt, from, to) {
   if (gt < from || gt > to) return 0;
-  const inWords = E.words.filter((x) => x.t < to && x.e > from);
-  const cur = inWords.find((x) => gt >= x.t && gt <= x.e + 0.04);
+  const inWords = E.words.filter((x) => (x.t ?? x.start) < to && (x.e ?? x.end) > from);
+  const cur = inWords.find((x) => gt >= (x.t ?? x.start) && gt <= (x.e ?? x.end) + 0.04);
   if (!cur && inWords.length) return 0;
   const k = Math.abs(Math.sin(gt * 17)) * 0.6 + Math.abs(Math.sin(gt * 7.3)) * 0.4;
   return clamp(0.25 + 0.75 * k);
+}
+
+// wordEnd: thoi diem (giay toan video) ket thuc cua mot tu hoac cum tu
+export function wordEnd(match, after = 0) {
+  const nz = (x) => String(x).normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
+  const parts = String(match).trim().split(/\s+/).map(nz).filter(Boolean);
+  const W = E.words;
+  for (let i = 0; i < W.length; i++) {
+    const wt = W[i].t ?? W[i].start ?? 0;
+    if (wt < after - 0.05) continue;
+    let ok = true;
+    for (let k = 0; k < parts.length; k++) {
+      const w = W[i + k];
+      const wordStr = nz(w ? (w.w ?? w.word ?? '') : '');
+      if (!w || !wordStr.startsWith(parts[k])) { ok = false; break; }
+    }
+    if (ok) {
+      const last = W[i + parts.length - 1];
+      return last.e ?? last.end ?? (last.t ?? last.start ?? 0) + 0.3;
+    }
+  }
+  return null;
+}
+export const wordsBetween = (a, b) => E.words.filter((w) => {
+  const t = w.t ?? w.start ?? 0;
+  const e = w.e ?? w.end ?? t;
+  return t >= a && e <= b;
+});
+
+// shotInfo: tao doi tuong tien ich cho shot, tinh thoi gian cuc bo (s tu dau shot) cua tu/cum tu
+export function shotInfo(shot) {
+  const dur = shot.end - shot.start;
+  return {
+    shot, id: shot.id, dur, start: shot.start, end: shot.end, line: shot.line || '', params: shot.params || {},
+    w: (phrase, fallback = 0) => {
+      const g = wordTime(phrase, shot.start - 0.35);
+      return g == null || g > shot.end + 0.5 ? fallback : Math.max(0, g - shot.start);
+    },
+    wEnd: (phrase, fallback = dur) => {
+      const g = wordEnd(phrase, shot.start - 0.35);
+      return g == null || g > shot.end + 1 ? fallback : Math.min(dur, Math.max(0, g - shot.start));
+    },
+  };
 }
 
 // ---------- dang ky shot
@@ -178,8 +290,10 @@ export const templateNames = () => [...TPLS.keys()];
 // anh ngoai (anh AI dat trong <du an>/anh/, ten file = ma anh, vd A012.png). Player nap truoc khi ve shot can dung.
 export const IMG = new Map();             // ma anh -> HTMLImageElement da giai ma
 export const ASSETS = new Map();          // ma anh -> duong dan file (tu /__assets)
+export const ASSET_METAS = new Map();     // ma anh -> metadata (.meta.json toa do neo)
 export const img = (id) => IMG.get(String(id)) || null;
 export const hasAsset = (id) => ASSETS.has(String(id));
+export const getAssetMeta = (id) => ASSET_METAS.get(String(id)) || null;
 
 // nhan vat co dang noi khong (theo timeline/lines.json): who = ten o giong (HERO, YOUNG_F...) hoac ten nhan vat
 export function speaking(gt, who) {

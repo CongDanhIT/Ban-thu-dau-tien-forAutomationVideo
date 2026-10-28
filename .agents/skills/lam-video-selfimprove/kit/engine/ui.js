@@ -136,3 +136,7 @@ export function endScreen(g, t, o = {}) {
   const ks = pop(prog(t, 0.8, 1.3)); g.save(); g.translate(E.W / 2 + V(170, 0), y + V(120, 250)); g.scale(ks || 0.001, ks || 0.001);
   rr(g, -150, -40, 300, 80, 40); g.fillStyle = '#e5484d'; g.fill(); text(g, sub, 0, 2, { size: 36, color: '#ffffff', spacing: 2 }); g.restore();
 }
+
+// Re-export Documentary & Evidence HTML/CSS Overlay components
+export { createUI, toStage } from './doc_ui.js';
+

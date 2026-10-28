@@ -20,6 +20,7 @@ Dau dong dac biet: "THẺ KẾT: WORD. / dong phu / dong phu mau nhan", "KÊU G�
 import argparse, json, os, re, sys, unicodedata
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import read_json, write_json
+from asset_registry import resolve_asset
 
 ap = argparse.ArgumentParser(); ap.add_argument("--project", required=True); ap.add_argument("--phim", required=True); ap.add_argument("--force", action="store_true")
 a = ap.parse_args(); P = a.project
@@ -78,6 +79,9 @@ def guess(scene):
     if re.search(r"màn đen|nền đen|black", s): return "black", None
     for k, v in SETS:
         if k in s: return "scene", v
+    res_set = resolve_asset("sets", s)
+    if res_set["status"] in ("exact", "alias", "fuzzy"):
+        return "scene", res_set["resolved"]
     return "scene", "bedroom"
 
 def hud_of(v):
@@ -120,14 +124,67 @@ def hints(scene, st, texts):
     elif re.search(r"ngồi bàn|ngồi ở bàn", s) and st == "bedroom": actors.append({"who": who, "x": "desk.seat", "pose": "sitdesk", "face": face, "facing": 1})
     elif re.search(r"chạy", s): actors.append({"who": who, "x": 0.15, "run": {"to": 0.85}, "face": "determined"})
     elif re.search(r"đi bộ|bước đi|đi ngang", s): actors.append({"who": who, "x": 0.2, "walk": {"to": 0.75}, "face": face})
-    elif re.search(r"ôm gối|ngồi bó gối", s): actors.append({"who": who, "x": 0.5, "pose": "knees", "face": face})
-    elif re.search(r"\bcậu\b|nhân vật|anh ta|\bhe\b", s): actors.append({"who": who, "x": 0.45, "pose": "phone" if "điện thoại" in s else "slump" if face in ("sad", "tired", "empty") else "stand", "face": face, **({"hold": "phone", "glowFace": "#9fb6ff"} if "điện thoại" in s else {})})
+    elif re.search(r"ôm gối|ngồi bó gối", s): actors.append({"who": who, "x": 0.30, "pose": "knees", "face": face})
+    elif re.search(r"\bcậu\b|nhân vật|anh ta|\bhe\b", s): actors.append({"who": who, "x": 0.30 if face in ("sad", "tired", "empty") else 0.45, "pose": "phone" if "điện thoại" in s else "slump" if face in ("sad", "tired", "empty") else "stand", "face": face, **({"hold": "phone", "glowFace": "#9fb6ff"} if "điện thoại" in s else {})})
     if "bóng đen" in s or any(x["kind"] == "tempt" for x in texts):
-        actors.append({"who": "voice", "x": 0.62 if not actors else min(0.85, (actors[0]["x"] if isinstance(actors[0]["x"], float) else 0.55) + 0.14), "pose": "reach" if "vai" in s or "với" in s else "stand", "facing": -1, "at": 0.3})
+        actors.append({"who": "voice", "x": 0.65 if not actors else min(0.85, (actors[0]["x"] if isinstance(actors[0]["x"], (int, float)) else 0.55) + 0.16), "h": 0.54, "pose": "reach" if "vai" in s or "với" in s else "stand", "facing": -1, "face": "grin", "at": 0.3})
     for k, w in [("bạn bè", "friend"), ("cô gái", "girl"), ("mẹ", "mom"), ("bố", "dad")]:
         if k in s: actors.append({"who": w, "x": 0.72, "pose": "stand", "face": "neutral", "facing": -1})
     if actors: acts["actors"] = actors
     return sa, acts
+
+def direct_cinematic_shot(tp, st, scene, texts, acts, d):
+    """Tu duy Dao dien & Phan canh Dien anh (Cinematic Director Engine):
+    - Tinh toan camera dong (Creep-in, Pull-out, Pan, Breathing push).
+    - Tinh toan rung chan dong tam ly (Camera shake).
+    - Ap dung bo cuc 1/3 va tuong phan ty le nhan vat vs bong den.
+    - Anh sang am u va ghi chu y do nghe thuat (Director Intent).
+    """
+    s = low(scene or "")
+    text_kinds = [x["kind"] for x in texts]
+    has_tempt = "tempt" in text_kinds or any(a.get("who") == "voice" for a in acts.get("actors", [])) or "cám dỗ" in s or "bóng đen" in s
+    has_shock = any(x in s for x in ["giật mình", "hốt hoảng", "sốc", "chuông", "kêu", "reo", "sụp đổ", "thất bại", "reset", "về 0", "relapse", "relapsed"]) or any(a.get("face") in ["shock", "scared", "bloodshot"] for a in acts.get("actors", []))
+    has_action = any(x in s for x in ["chạy", "vượt qua", "đứng dậy", "quyết tâm", "bước"]) or any(a.get("face") == "determined" or a.get("pose") == "run" for a in acts.get("actors", []))
+    
+    cam = None; shake = None; intent = []; vignette_val = 0.5; lights = []
+    
+    if tp in ("clock", "phone", "calendar"):
+        cam = {"from": [0.5, 0.5, 1.0], "to": [0.5, 0.5, 1.06], "dur": round(d, 2)}
+        intent.append(f"Cận cảnh {tp} đẩy chậm (Push 1.06x) để tập trung cao độ")
+    elif has_tempt:
+        cam = {"from": [0.5, 0.5, 1.0], "to": [0.46, 0.53, 1.16], "dur": round(d, 2)}
+        vignette_val = 0.62
+        lights.append({"x": 0.65, "y": 0.45, "r": 0.35, "color": "#c4302b", "a": 0.16})
+        intent.append("Creep-in zoom (1.16x): Thu hẹp góc nhìn tạo cảm giác bị cám dỗ bủa vây")
+    elif has_shock:
+        cam = {"from": [0.47, 0.52, 1.14], "to": [0.5, 0.5, 1.0], "dur": round(min(d, 2.5), 2)}
+        shake = [{"at": 0.15, "amt": 1.2, "dur": 0.45}]
+        intent.append("Camera Shake + Pull-out: Chấn động tâm lý khi chuỗi ngày sụp đổ")
+    elif has_action:
+        cam = {"from": [0.42, 0.5, 1.04], "to": [0.58, 0.5, 1.08], "dur": round(d, 2)}
+        intent.append("Panning ngang: Nhịp điệu hành động dứt khoát vượt lên")
+    else:
+        cam = {"from": [0.5, 0.5, 1.0], "to": [0.5, 0.5, 1.03], "dur": round(d, 2)}
+        intent.append("Subtle breathing push (1.03x): Giữ khung hình luôn sống động")
+
+    if acts.get("actors"):
+        actors = acts["actors"]
+        voice_act = next((a for a in actors if a.get("who") == "voice"), None)
+        main_act = next((a for a in actors if a.get("who") != "voice"), None)
+        if voice_act:
+            voice_act["h"] = 0.54
+            voice_act["face"] = "grin"
+            if main_act:
+                main_act["h"] = 0.40
+                if isinstance(main_act.get("x"), (int, float)):
+                    main_act["x"] = 0.30
+                    voice_act["x"] = 0.66
+                intent.append("Tương phản kích thước: Quỷ cám dỗ cao lớn (h=0.54) trùm lên nhân vật bé nhỏ (h=0.40)")
+        elif main_act and main_act.get("pose") in ("slump", "knees", "sitsad") and isinstance(main_act.get("x"), (int, float)):
+            main_act["x"] = 0.28
+            intent.append("Bố cục 1/3 (Negative Space): Nhân vật dạt sang trái, chừa 70% khoảng tối cô độc")
+
+    return cam, shake, vignette_val, lights, " | ".join(intent)
 
 TEMPT_CPS = 16
 def read_time(tx):
@@ -138,6 +195,7 @@ def read_time(tx):
     return max(1.8, min(4.5, 1.0 + w * 0.32))
 
 shots = []; music = []; t = 0.0; hud = None; bed = None; warn = []
+reused_assets = []; missing_assets = []
 for b in beats:
     d = b["dur"]; scene = tag(b, "cảnh", "canh", "scene") or ""
     tk = tag(b, "thẻ kết", "the ket", "card"); cta = any(k.startswith(("kêu gọi", "keu goi", "cta")) for k in b["tags"])
@@ -152,7 +210,15 @@ for b in beats:
     for x in (tag(b, "sfx") or "").split(","):
         x = x.strip()
         if not x: continue
-        nm, _, tt = x.partition("@"); sfx.append({"at": float(tt) if tt else 0.2, "name": nm.strip(), "gain": -8})
+        nm, _, tt = x.partition("@")
+        nm_clean = nm.strip()
+        res_sfx = resolve_asset("sfx", nm_clean)
+        sfx_resolved = res_sfx["resolved"]
+        if res_sfx["status"] == "missing":
+            missing_assets.append({"type": "SFX", "name": nm_clean, "shot": b["id"], "suggestion": res_sfx.get("suggestion", "")})
+        elif res_sfx["status"] in ("alias", "fuzzy"):
+            reused_assets.append({"type": "SFX", "from": nm_clean, "to": sfx_resolved, "mode": res_sfx["status"]})
+        sfx.append({"at": float(tt) if tt else 0.2, "name": sfx_resolved, "gain": -8})
     # chu: xep lan luot
     texts = []; cursor = 0.35; chats = []
     for tx in b["texts"]:
@@ -223,9 +289,13 @@ for b in beats:
                     at = c["at"] if c["at"] is not None else c0; msgs.append({"text": c["t"], "me": c["me"], "at": round(at, 2)}); c0 = at + read_time(c)
                     if not c["me"] and c.get("name"): args["name"] = c["name"]
                 args["messages"] = msgs
+        cam, shake, vig, lights, director_intent = direct_cinematic_shot(tp, st, scene, texts, acts if tp == "scene" else {}, d)
+        if cam: args["cam"] = cam
+        if shake: args["shake"] = shake
+        if vig != 0.5: args["vignette"] = vig
+        if lights: args["lights"] = lights
+        if director_intent: sh["notes"] = director_intent
         sh.update({"tpl": tp, "args": args})
-        # nhan vat goi y theo chu
-        if tp == "scene" and any(x["kind"] == "tempt" for x in texts): sh["notes"] = "co giong cam do: them actor who=voice"
     if hud and sh.get("tpl") not in ("card", "cta"):
         # bo dem da gach ve 0 thi canh sau giu so moi
         for r in hud:
@@ -242,3 +312,22 @@ cfg["duration"] = dur; cfg.setdefault("pack", "dem"); write_json(cfg_p, cfg)
 write_json(out, {"title": cfg.get("title", meta.get("title", "")), "duration": dur, "shots": shots, "music": music})
 print(f"Xong: {len(shots)} canh, dai {dur:.1f} giay ({dur/60:.1f} phut), {len(music)} doan nhac -> {out}")
 for w in warn: print("CANH BAO:", w)
+
+print("\n========== KIEM TOAN TAI NGUYEN (ASSET AUDIT) ==========")
+if reused_assets:
+    print(f"[*] Tai su dung thong minh: {len(reused_assets)} tai nguyen (qua Alias & Fuzzy matching):")
+    for r in reused_assets[:6]:
+        print(f"    - {r['type']}: '{r['from']}' -> '{r['to']}' ({r['mode']})")
+    if len(reused_assets) > 6:
+        print(f"    ... va {len(reused_assets) - 6} tai nguyen khac.")
+else:
+    print("[*] Tat ca tai nguyen deu dung ten chuan (Exact Match).")
+
+if missing_assets:
+    print(f"\n[!] PHAT HIEN {len(missing_assets)} TAI NGUYEN THUC SU THIEU (Can tao moi de tai su dung):")
+    for m in missing_assets:
+        print(f"    - [{m['shot']}] {m['type']}: '{m['name']}'")
+        print(f"      Huong dan: {m['suggestion']}")
+else:
+    print("[v] Khong thieu tai nguyen nao. San sang san xuat!")
+print("========================================================\n")

@@ -1,0 +1,22 @@
+{
+ "title": "What If Time Stopped for 5 Seconds?",
+ "aspect": "16:9",
+ "resolution": "1080p",
+ "fps": 24,
+ "style": "dusk",
+ "captions": false,
+ "bars": "cinematic",
+ "fadeIn": 0.4,
+ "fadeOut": 0.8,
+ "pack": "stick",
+ "lang": "en",
+ "music": {
+  "enabled": true,
+  "gainDb": -15
+ },
+ "sfx": {
+  "enabled": true,
+  "gainDb": -4
+ },
+ "loudness": -14
+}

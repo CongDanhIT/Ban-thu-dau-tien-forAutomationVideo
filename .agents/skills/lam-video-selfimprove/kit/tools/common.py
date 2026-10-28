@@ -37,6 +37,9 @@ def write_json(path, obj):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f: json.dump(obj, f, ensure_ascii=False, indent=1)
 
+load_json = read_json
+save_json = write_json
+
 def rms_env(y, hop=0.01, sr=SR):
     h = int(hop * sr); n = len(y) // h
     if n < 1: return np.zeros(1)

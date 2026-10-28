@@ -6,6 +6,15 @@
 <link rel="stylesheet" href="/node_modules/@fontsource/lora/700-italic.css">
 <style>html,body{margin:0;background:#000}canvas{display:block}</style>
 </head><body><canvas id="c"></canvas>
-<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js"}}</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/node_modules/three/build/three.module.js",
+    "three/examples/jsm/": "/node_modules/three/examples/jsm/",
+    "three/addons/": "/node_modules/three/examples/jsm/",
+    "topojson-client": "/node_modules/topojson-client/src/index.js"
+  }
+}
+</script>
 <script type="module" src="/engine/player.js"></script>
 </body></html>
